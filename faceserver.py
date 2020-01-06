@@ -351,16 +351,20 @@ class facetracker:
         self.fd.stop()
         self.predict.stop()
 
+CONNECT = ('127.0.0.1', 59942)
+
 class socketmanage:
-    def __init__(self, fn="/tmp/facetracker"):
+    #def __init__(self, fn="/tmp/facetracker"):
+    def __init__(self, fn=CONNECT):
         self.so = socket.socket(
-            family=socket.AF_UNIX,
+            family = socket.AF_INET,
+            #family=socket.AF_UNIX,
             type=socket.SOCK_STREAM
         )
-        try:
-            os.unlink(fn)
-        except FileNotFoundError:
-            pass
+        #try:
+        #    os.unlink(fn)
+        #except FileNotFoundError:
+        #    pass
         self.so.bind(fn)
         self.so.listen()
         self.ft = facetracker()

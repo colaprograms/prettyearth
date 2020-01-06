@@ -13,12 +13,14 @@ VERSION = 0x1000
 PACKET_VALID = 1
 PACKET_INVALID = 0
 
-fn = "/tmp/facetracker"
+#fn = "/tmp/facetracker"
+CONNECT = ('127.0.0.1', 59942)
 
 class faceclient:
 
-    def __init__(self, fn="/tmp/facetracker"):
-        self.fn = fn
+    #def __init__(self, fn="/tmp/facetracker"):
+    def __init__(self, fn=None):
+        self.fn = fn or CONNECT
         self.so = None
         self.last_time = None
 
@@ -26,7 +28,7 @@ class faceclient:
         if self.so is not None:
             raise Exception("already connected")
         self.so = socket.socket(
-            family = socket.AF_UNIX,
+            family = socket.AF_INET,
             type = socket.SOCK_STREAM
         )
         self.so.connect(self.fn)
