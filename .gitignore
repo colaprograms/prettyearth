@@ -1,7 +1,9 @@
 pics/*.png
+pics/*.png.last-updated
+!pics/calibrate.png
 !pics/black.png
 !pics/satellite.png
 landmarks.dat
 Thumbs.db
-*.png.last-updated
 __pycache__
+*.swp
