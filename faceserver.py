@@ -141,6 +141,9 @@ class facedetector:
             frames = self.alignment.process(frames)
             color_frame = frames.get_color_frame()
             t = color_frame.get_frame_metadata(rs.frame_metadata_value.backend_timestamp)
+            t /= 1000
+            #t = time.time()
+            #print("difference:", time.time() - t)
             if t != self.last:
                 waiting = False
             self.last = t
@@ -212,22 +215,18 @@ class predicteyes:
         self.stop()
         self.out = np.zeros(3)
         self.reset = True
-        self.t0 = None
 
     def stop(self):
         self.reset = True
 
     def __call__(self, t, x, y, z):
         if self.reset:
-            if self.t0 is None:
-                self.t0 = t
             self.mids = [
                 dampve(1, 0.1),
                 dampve(1, 0.1),
                 dampve(1, 0.1)
             ]
             self.reset = False
-        t -= self.t0
         for (j, c) in enumerate([x, y, z]):
             self.out[j] = self.mids[j].add(t, c) #(c)
         return t, self.out

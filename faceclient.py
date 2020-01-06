@@ -1,5 +1,6 @@
 import socket
 import struct
+import time
 
 def RECEIVERFOR(ft):
     size = struct.calcsize(ft)
@@ -43,6 +44,7 @@ class faceclient:
             self.current = None
         elif packettype == PACKET_VALID:
             t, x, y, z = self.get_valid()
+            print("time offset", time.time() - t)
             if self.last_time is None:
                 self.last_time = t
             else:
