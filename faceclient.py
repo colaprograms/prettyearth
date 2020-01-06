@@ -1,6 +1,7 @@
 import socket
 import struct
 import time
+from threading import Thread
 
 def RECEIVERFOR(ft):
     size = struct.calcsize(ft)
@@ -44,11 +45,9 @@ class faceclient:
             self.current = None
         elif packettype == PACKET_VALID:
             t, x, y, z = self.get_valid()
-            print("time offset", time.time() - t)
             if self.last_time is None:
                 self.last_time = t
             else:
-                print(t - self.last_time)
                 self.last_time = t
             self.current = t, x, y, z
         return self.current
@@ -57,6 +56,25 @@ class faceclient:
         if self.so is not None:
             self.so.close()
             self.so = None
+
+class faceclient_thread:
+    def __init__(self):
+        self.th = Thread(target=self.do)
+        self.stop = False
+
+    def run(self):
+        self.th.start()
+
+    def do(self):
+        self.cur = None
+        fc = faceclient()
+        try:
+            fc.connect()
+            while not self.stop:
+                self.cur = fc.get()
+        finally:
+            self.cur = None
+            fc.stop()
 
 if __name__ == "__main__":
     fc = faceclient()
