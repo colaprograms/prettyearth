@@ -3,7 +3,6 @@ from projec import convert
 import math
 import numpy as np
 import time
-import ephem
 import datetime
 
 Image.MAX_IMAGE_PIXELS = 300000000
@@ -69,6 +68,10 @@ class cybermercator (sphereimage):
 class darkearth (sphereimage):
     """Shades the part of the earth opposite the sun by half."""
     def __init__(self, time):
+        try:
+            import ephem
+        except ImportError:
+            raise Exception("need to install ephem to use darkearth()")
         self.sun = ephem.Sun()
         self.observer = ephem.Observer()
         self.observer.lon = "90"

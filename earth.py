@@ -58,7 +58,7 @@ class cube(mesh):
             for y in [-1, 1]:
                 for z in [-1, 1]:
                     r = (x*x + y*y + z*z)**0.5
-                    self.addvertex((x, y, z), (x/r, y/r, z/r), (0, 0))
+                    self.addvertex((x, y, z), (x/r, y/r, z/r), ((x+1) * 0.5, (z+1) * 0.5))
         
         def do(a, b, c):
             self.addtriang(a, a^b, a^c)
@@ -237,16 +237,21 @@ class Planet(ShowBase):
         base.disableMouse()
         base.camLens.setNearFar(0.1, 100) #base.camLens.setNearFar(0.1, 20)
         
-        #p = planet(base.render)
-        
-        cuby = cube(base.render)
-        material = Material()
-        material.setShininess(1)
-        material.setSpecular((1, 0.2, 0.2, 1))
-        cuby.nodePath.setScale(1/10)
-        cuby.nodePath.setPos(0, 0, 0)
-        cuby.nodePath.setMaterial(material)
-        cuby.nodePath.reparentTo(base.render)
+        if True:
+            p = planet(base.render)
+        else:
+            cuby = cube(base.render)
+            material = Material()
+            material.setShininess(1)
+            material.setSpecular((0.2, 0.2, 0.2, 1))
+            #material.setSpecular((1, 0.2, 0.2, 1))
+            #cuby.nodePath.setScale(1/10)
+            cuby.nodePath.setScale(0.1, 0.1, 0.1)
+            cuby.nodePath.setPos(0, 0.1, 0)
+            cuby.nodePath.setMaterial(material)
+            tx = maketexture("pics/calibrate.png")
+            cuby.nodePath.setTexture(tx, 3)
+            cuby.nodePath.reparentTo(base.render)
         
         light = plight()
         light.on()
@@ -296,10 +301,13 @@ class Planet(ShowBase):
         if self.facepos.cur is not None:
             t, x, y, z = self.facepos.cur
             y -= 0.15
-            z += 0.12
+            z += 0.06
             x *= -12
             y *= -12
-            z *= 16 #12
+            z *= 18
+            #x *= -12
+            #y *= -12
+            #z *= 16 #12
             self.last = t, x, y, z
         else:
             if self.last:
@@ -320,7 +328,7 @@ class Planet(ShowBase):
         SCREEN_HEIGHT_IN_METRES = 0.29
         offset = LPoint3(x, -z, y)
         ul, ur, ll, lr = scrn(SCREEN_HEIGHT_IN_METRES, offset)
-        base.camLens.setFrustumFromCorners(ul, ur, ll, lr, Lens.FC_off_axis | Lens.FC_aspect_ratio | Lens.FC_shear)
+        base.camLens.setFrustumFromCorners(ul, ur, ll, lr, Lens.FC_off_axis | Lens.FC_shear)
         base.cam.setPos(offset)
         return Task.cont
         

@@ -1,2 +1,7 @@
+pics/*.png
+!pics/black.png
+!pics/satellite.png
 landmarks.dat
 Thumbs.db
+*.png.last-updated
+__pycache__
