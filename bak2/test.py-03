@@ -1,0 +1,206 @@
+# modified from librealsense/wrappers/python/examples/opencv_viewer_example.py
+# and http://dlib.net/face_landmark_detection.py.html
+
+import pyrealsense2 as rs
+import numpy as np
+import time
+import dlib
+
+class average:
+    def __init__(self):
+        self.count = 0
+        self.accum = 0
+
+    def add(self, j):
+        self.count += 1
+        self.accum += j
+
+    def get(self):
+        return self.accum / self.count if self.count >= 1 else 0
+
+class timeaverage:
+    def __init__(self):
+        self.avg = average()
+        self.t = None
+
+    def start(self):
+        if self.t is not None:
+            raise Exception("started twice")
+        self.t = time.time()
+
+    def stop(self):
+        if self.t is None:
+            return #raise Exception("already stop")
+        self.avg.add(time.time() - self.t)
+        self.t = None
+
+    def get(self):
+        return self.avg.get()
+
+facebbtimer = timeaverage()
+
+shapestimer = timeaverage()
+
+shortftimer = timeaverage()
+
+otherstimer = timeaverage()
+
+def decompose(r):
+    return r.top(), r.bottom(), r.left(), r.right()
+
+class facedetector:
+    def __init__(self):
+        self.currentbb = None
+        self.last = None
+
+    def start(self):
+        self.pipeline = rs.pipeline()
+        self.config = rs.config()
+        self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 60)
+        self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 60)
+
+        self.fd = dlib.get_frontal_face_detector()
+        self.sp = dlib.shape_predictor("landmarks.dat")
+        class pyramid:
+            def __init__(self):
+                pass
+
+            def __call__(self, im):
+                return im
+
+            def rect_down(self, rect):
+                return rect
+
+            def rect_up(self, rect):
+                return rect
+        self.pd = dlib.pyramid_down(2)
+
+        self.pipeline.start(self.config)
+
+    def face_detector(self, im):
+        def sp(b):
+            shapestimer.start()
+            out = self.sp.calldpoint(im, b)
+            shapestimer.stop()
+            return out
+        if self.currentbb is None:
+            facebbtimer.start()
+            i2 = self.pd(im)
+            facebb = self.fd(i2)
+            facebbtimer.stop()
+            if len(facebb) > 0:
+                self.currentbb = self.pd.rect_up(facebb[0])
+        else:
+            shortftimer.start()
+            i2 = self.pd(im)
+            h, w, _ = i2.shape
+            #t, b, l, r = decompose(self.currentbb)
+            t, b, l, r = decompose(self.pd.rect_down(self.currentbb))
+            def tryfindface(t, b, l, r, expand):
+                extra_top = 20
+                t = max(0, t - extra_top - expand)
+                b = min(h, b + expand)
+                l = max(0, l - expand)
+                r = min(w, r + expand)
+                facebb = self.fd(i2[t:b, l:r, :])
+                if len(facebb) > 1:
+                    raise Exception("too many faces in the little box??")
+                elif len(facebb) == 1:
+                    rect = facebb[0]
+                    rect = dlib.translate_rect(rect, dlib.point(l, t))
+                    return self.pd.rect_up(rect)
+                else:
+                    return None
+            #expands = [60, 640]
+            expands = [30, 320]
+            for ex in expands:
+                rect = tryfindface(t, b, l, r, ex)
+                if rect:
+                    break
+                print(f"couldn't find the face with expansion {ex}")
+            shortftimer.stop()
+            self.currentbb = rect
+        if self.currentbb is not None:
+            self.last = sp(self.currentbb)
+        else:
+            self.last = None
+        return self.last
+
+    def get(self):
+        frames = self.pipeline.wait_for_frames()
+        depth_frame = frames.get_depth_frame()
+        color_frame = frames.get_color_frame()
+        if not depth_frame or not color_frame:
+            return None
+        depth_image = np.asanyarray(depth_frame.get_data())
+        color_image = np.asanyarray(color_frame.get_data())
+        color_image = color_image[:, :, [2,1,0]]
+        shape = self.face_detector(color_image)
+        return (depth_image, color_image, shape)
+
+    def stop(self):
+        self.pipeline.stop()
+
+class imagewindow:
+    def __init__(self):
+        self.wi = dlib.image_window()
+
+    def show(self, out):
+        t, depthimage, colorimage, shape = out
+        wi.set_image(colorimage)
+        wi.clear_overlay()
+        if shape is not None:
+            def topoint(dp):
+                return dlib.point(dp.x, dp.y)
+            fobp = dlib.full_object_detection(shape.rect, [topoint(shape.part(i)) for i in range(shape.num_parts)])
+            wi.add_overlay(fobp)
+            wi.add_overlay(shape.rect)
+
+    def overlay_circle(self, x, y):
+        wi.add_overlay_circle(dlib.dpoint(x, y), 3)
+
+if __name__ == "__main__":
+    fd = facedetector()
+    fd.start()
+    wi = dlib.image_window()
+    framecount = -1
+    try:
+        while True:
+            otherstimer.stop()
+            out = fd.get()
+            otherstimer.start()
+            if out is not None:
+                if framecount == -1:
+                    framecount = 0
+                    starttime = time.time()
+                    pass
+                else:
+                    framecount += 1
+                    if framecount % 100 == 0:
+                        print(f"FPS: {framecount / (time.time() - starttime)}")
+                        print(f"Face bounding boxes take {facebbtimer.get()} on average")
+                        print(f"Shape prediction takes {shapestimer.get()} on average")
+                        print(f"Small face bounding boxes: {shortftimer.get()} on average")
+                        print(f"Other stuff: {otherstimer.get()} on average")
+                depthimage, colorimage, shape = out
+                #print(colorimage.shape)
+                depthimage = np.minimum(depthimage, 1000)
+                wi.set_image(colorimage)
+                wi.clear_overlay()
+                if shape is not None:
+                    def topoint(dp):
+                        return dlib.point(dp.x, dp.y)
+                    fobp = dlib.full_object_detection(shape.rect, [topoint(shape.part(i)) for i in range(shape.num_parts)])
+                    wi.add_overlay(fobp)
+                    wi.add_overlay(shape.rect)
+                    #print(shape.num_parts)
+                    #for i in range(36, framecount % 68):
+                    def meanof(ix):
+                        sp = [shape.part(i) for i in ix]
+                        v = np.array([[p.x, p.y] for p in sp])
+                        v = np.mean(v, axis=0)
+                        return dlib.dpoint(v[0], v[1])
+                    for r in range(36, 42), range(42, 48):
+                        wi.add_overlay_circle(meanof(r), 3)
+    finally:
+        fd.stop()

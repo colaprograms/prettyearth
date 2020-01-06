@@ -1,0 +1,3 @@
+*.png
+*.png.last-updated
+!satellite.png

@@ -1,0 +1,402 @@
+diff -ru dlib-19.19/dlib/config.h dlib-19.19-new/dlib/config.h
+--- dlib-19.19/dlib/config.h	2019-12-14 14:10:30.000000000 -0500
++++ dlib-19.19-new/dlib/config.h	2019-12-19 16:55:59.385558758 -0500
+@@ -7,25 +7,28 @@
+ // always off.  If you don't define one of these two macros then DLIB_ASSERT will toggle
+ // automatically depending on the state of certain other macros, which is not what you want
+ // when creating a shared library.
+-//#define ENABLE_ASSERTS       // asserts always enabled 
+-//#define DLIB_DISABLE_ASSERTS // asserts always disabled 
++/* #undef ENABLE_ASSERTS */
++#define DLIB_DISABLE_ASSERTS // asserts always disabled 
+ 
+-//#define DLIB_ISO_CPP_ONLY
+-//#define DLIB_NO_GUI_SUPPORT
+-//#define DLIB_ENABLE_STACK_TRACE
++/* #undef DLIB_ISO_CPP_ONLY */
++/* #undef DLIB_NO_GUI_SUPPORT */
++/* #undef DLIB_ENABLE_STACK_TRACE */
++
++/* #undef LAPACK_FORCE_UNDERSCORE */
++/* #undef LAPACK_FORCE_NOUNDERSCORE */
+ 
+ // You should also consider telling dlib to link against libjpeg, libpng, libgif, fftw, CUDA, 
+ // and a BLAS and LAPACK library.  To do this you need to uncomment the following #defines.
+-// #define DLIB_JPEG_SUPPORT
+-// #define DLIB_PNG_SUPPORT
+-// #define DLIB_GIF_SUPPORT
+-// #define DLIB_USE_FFTW
+-// #define DLIB_USE_BLAS
+-// #define DLIB_USE_LAPACK
+-// #define DLIB_USE_CUDA
+-
++#define DLIB_JPEG_SUPPORT
++#define DLIB_PNG_SUPPORT
++/* #undef DLIB_GIF_SUPPORT */
++/* #undef DLIB_USE_FFTW */
++#define DLIB_USE_BLAS
++#define DLIB_USE_LAPACK
++/* #undef DLIB_USE_CUDA */
++/* #undef DLIB_USE_MKL_FFT */
+ 
+-// Define this so the code in dlib/test_for_odr_violations.h can detect ODR violations
+-// related to users doing bad things with config.h
+-#define DLIB_NOT_CONFIGURED
++// This variable allows dlib/test_for_odr_violations.h to catch people who mistakenly use
++// headers from one version of dlib with a compiled dlib binary from a different dlib version.
++#define DLIB_CHECK_FOR_VERSION_MISMATCH DLIB_VERSION_MISMATCH_CHECK__EXPECTED_VERSION_19_19_0
+ 
+diff -ru dlib-19.19/dlib/image_processing/full_object_detection_abstract.h dlib-19.19-new/dlib/image_processing/full_object_detection_abstract.h
+--- dlib-19.19/dlib/image_processing/full_object_detection_abstract.h	2019-12-14 14:10:30.000000000 -0500
++++ dlib-19.19-new/dlib/image_processing/full_object_detection_abstract.h	2019-12-19 16:55:59.509560551 -0500
+@@ -17,7 +17,8 @@
+ 
+ // ----------------------------------------------------------------------------------------
+ 
+-    class full_object_detection
++    template<typename pointtype>
++    class full_object_detection_generic
+     {
+         /*!
+             WHAT THIS OBJECT REPRESENTS
+@@ -27,7 +28,7 @@
+ 
+     public:
+ 
+-        full_object_detection(
++        full_object_detection_generic(
+             const rectangle& rect,
+             const std::vector<point>& parts
+         );
+@@ -39,7 +40,7 @@
+                     - part(i) == parts[i]
+         !*/
+ 
+-        full_object_detection(
++        full_object_detection_generic(
+         );
+         /*!
+             ensures
+@@ -47,7 +48,7 @@
+                 - #num_parts() == 0
+         !*/
+ 
+-        explicit full_object_detection(
++        explicit full_object_detection_generic(
+             const rectangle& rect
+         );
+         /*!
+@@ -106,7 +107,7 @@
+         !*/
+ 
+         bool operator==(
+-            const full_object_detection& rhs
++            const full_object_detection_generic& rhs
+         ) const;
+         /*!
+             ensures
+@@ -114,23 +115,7 @@
+         !*/
+     };
+ 
+-// ----------------------------------------------------------------------------------------
+-
+-    void serialize (
+-        const full_object_detection& item, 
+-        std::ostream& out
+-    );   
+-    /*!
+-        provides serialization support 
+-    !*/
+-
+-    void deserialize (
+-        full_object_detection& item, 
+-        std::istream& in
+-    );   
+-    /*!
+-        provides deserialization support 
+-    !*/
++    //{
+ 
+ // ----------------------------------------------------------------------------------------
+ 
+diff -ru dlib-19.19/dlib/image_processing/full_object_detection.h dlib-19.19-new/dlib/image_processing/full_object_detection.h
+--- dlib-19.19/dlib/image_processing/full_object_detection.h	2019-12-14 14:10:30.000000000 -0500
++++ dlib-19.19-new/dlib/image_processing/full_object_detection.h	2019-12-19 16:55:59.509560551 -0500
+@@ -18,17 +18,18 @@
+ 
+ // ----------------------------------------------------------------------------------------
+ 
+-    class full_object_detection
++    template<typename pointtype>
++    class full_object_detection_generic
+     {
+     public:
+-        full_object_detection(
++        full_object_detection_generic(
+             const rectangle& rect_,
+-            const std::vector<point>& parts_
++            const std::vector<pointtype>& parts_
+         ) : rect(rect_), parts(parts_) {}
+ 
+-        full_object_detection(){}
++        full_object_detection_generic(){}
+ 
+-        explicit full_object_detection(
++        explicit full_object_detection_generic(
+             const rectangle& rect_
+         ) : rect(rect_) {}
+ 
+@@ -36,13 +37,13 @@
+         rectangle& get_rect() { return rect; }
+         unsigned long num_parts() const { return parts.size(); }
+ 
+-        const point& part(
++        const pointtype& part(
+             unsigned long idx
+         ) const 
+         { 
+             // make sure requires clause is not broken
+             DLIB_ASSERT(idx < num_parts(),
+-                "\t point full_object_detection::part()"
++                "\t pointtype full_object_detection_generic::part()"
+                 << "\n\t Invalid inputs were given to this function "
+                 << "\n\t idx:         " << idx  
+                 << "\n\t num_parts(): " << num_parts()  
+@@ -51,13 +52,13 @@
+             return parts[idx]; 
+         }
+ 
+-        point& part(
++        pointtype& part(
+             unsigned long idx
+         )  
+         { 
+             // make sure requires clause is not broken
+             DLIB_ASSERT(idx < num_parts(),
+-                "\t point full_object_detection::part()"
++                "\t pointtype full_object_detection_generic::part()"
+                 << "\n\t Invalid inputs were given to this function "
+                 << "\n\t idx:         " << idx  
+                 << "\n\t num_parts(): " << num_parts()  
+@@ -67,7 +68,7 @@
+         }
+ 
+         friend void serialize (
+-            const full_object_detection& item,
++            const full_object_detection_generic& item,
+             std::ostream& out
+         )
+         {
+@@ -78,21 +79,21 @@
+         }
+ 
+         friend void deserialize (
+-            full_object_detection& item,
++            full_object_detection_generic& item,
+             std::istream& in
+         )
+         {
+             int version = 0;
+             deserialize(version, in);
+             if (version != 1)
+-                throw serialization_error("Unexpected version encountered while deserializing dlib::full_object_detection.");
++                throw serialization_error("Unexpected version encountered while deserializing dlib::full_object_detection_generic.");
+ 
+             deserialize(item.rect, in);
+             deserialize(item.parts, in);
+         }
+ 
+         bool operator==(
+-            const full_object_detection& rhs
++            const full_object_detection_generic& rhs
+         ) const
+         {
+             if (rect != rhs.rect)
+@@ -109,9 +110,11 @@
+ 
+     private:
+         rectangle rect;
+-        std::vector<point> parts;  
++        std::vector<pointtype> parts;  
+     };
+ 
++    using full_object_detection = full_object_detection_generic<point>;
++
+ // ----------------------------------------------------------------------------------------
+ 
+     inline bool all_parts_in_rect (
+diff -ru dlib-19.19/dlib/image_processing/shape_predictor.h dlib-19.19-new/dlib/image_processing/shape_predictor.h
+--- dlib-19.19/dlib/image_processing/shape_predictor.h	2019-12-14 14:10:30.000000000 -0500
++++ dlib-19.19-new/dlib/image_processing/shape_predictor.h	2019-12-19 16:55:59.509560551 -0500
+@@ -336,13 +336,37 @@
+         }
+ 
+         template <typename image_type>
+-        full_object_detection operator()(
++        full_object_detection operator() (
+             const image_type& img,
+             const rectangle& rect
+         ) const
+         {
++            return this->operator()<image_type, point>(img, rect, nullptr);
++        }
++            
++        template <typename image_type, typename pointtype>
++        //template <typename image_type, typename pointtype = point>
++        full_object_detection_generic<pointtype> operator()(
++            const image_type& img,
++            const rectangle& rect,
++            full_object_detection_generic<pointtype> *startpart = nullptr
++        ) const
++        {
+             using namespace impl;
+             matrix<float,0,1> current_shape = initial_shape;
++
++            // try to let the parts start at the solution from last frame - 2019/12/18 HAC
++            if(startpart != nullptr) {
++                const point_transform_affine tform_from_img = normalizing_tform(rect);
++                DLIB_ASSERT(startpart->num_parts() * 2 == current_shape.size());
++                for(unsigned long i = 0; i < startpart->num_parts(); ++i) {
++                    pointtype locn = tform_from_img(startpart->part(i));
++                    std::cout << i << locn(0) << locn(1) << std::endl;
++                    current_shape(i*2) = locn(0);
++                    current_shape(i*2 + 1) = locn(1);
++                }
++            }
++
+             std::vector<float> feature_pixel_values;
+             for (unsigned long iter = 0; iter < forests.size(); ++iter)
+             {
+@@ -356,10 +380,10 @@
+ 
+             // convert the current_shape into a full_object_detection
+             const point_transform_affine tform_to_img = unnormalizing_tform(rect);
+-            std::vector<point> parts(current_shape.size()/2);
++            std::vector<pointtype> parts(current_shape.size()/2);
+             for (unsigned long i = 0; i < parts.size(); ++i)
+                 parts[i] = tform_to_img(location(current_shape, i));
+-            return full_object_detection(rect, parts);
++            return full_object_detection_generic<pointtype>(rect, parts);
+         }
+ 
+         template <typename image_type, typename T, typename U>
+diff -ru dlib-19.19/tools/python/src/shape_predictor.cpp dlib-19.19-new/tools/python/src/shape_predictor.cpp
+--- dlib-19.19/tools/python/src/shape_predictor.cpp	2019-12-14 14:10:30.000000000 -0500
++++ dlib-19.19-new/tools/python/src/shape_predictor.cpp	2019-12-19 16:55:59.793564657 -0500
+@@ -15,19 +15,21 @@
+ 
+ // ----------------------------------------------------------------------------------------
+ 
+-full_object_detection run_predictor (
++template <typename pointtype = point>
++full_object_detection_generic<pointtype> run_predictor (
+         shape_predictor& predictor,
+         py::array img,
+-        const rectangle& box
++        const rectangle& box,
++        full_object_detection_generic<pointtype> *stp = nullptr
+ )
+ {
+     if (is_image<unsigned char>(img))
+     {
+-        return predictor(numpy_image<unsigned char>(img), box);
++        return predictor(numpy_image<unsigned char>(img), box, stp); //predictor(numpy_image<unsigned char>(img), box);
+     }
+     else if (is_image<rgb_pixel>(img))
+     {
+-        return predictor(numpy_image<rgb_pixel>(img), box);
++        return predictor(numpy_image<rgb_pixel>(img), box, stp); //return predictor(numpy_image<rgb_pixel>(img), box);
+     }
+     else
+     {
+@@ -91,6 +93,54 @@
+ 
+ // ----------------------------------------------------------------------------------------
+ 
++rectangle full_obj_det_dp_get_rect (const full_object_detection_generic<dpoint>& detection)
++{ return detection.get_rect(); }
++
++unsigned long full_obj_det_dp_num_parts (const full_object_detection_generic<dpoint>& detection)
++{ return detection.num_parts(); }
++
++point full_obj_det_dp_part (const full_object_detection_generic<dpoint>& detection, const unsigned long idx)
++{
++    if (idx >= detection.num_parts())
++    {
++        PyErr_SetString(PyExc_IndexError, "Index out of range");
++        throw py::error_already_set();
++    }
++    return detection.part(idx);
++}
++
++std::vector<dpoint> full_obj_det_dp_parts (const full_object_detection_generic<dpoint>& detection)
++{
++    const unsigned long num_parts = detection.num_parts();
++    std::vector<dpoint> parts(num_parts);
++    for (unsigned long j = 0; j < num_parts; ++j)
++        parts[j] = detection.part(j);
++    return parts;
++}
++
++std::shared_ptr<full_object_detection_generic<dpoint>> full_obj_det_dp_init(const rectangle& rect, const py::object& pyparts_)
++{
++    try 
++    {
++        auto&& pyparts = pyparts_.cast<py::list>();
++
++        const unsigned long num_parts = py::len(pyparts);
++        std::vector<dpoint> parts;
++        for (const auto& item : pyparts)
++            parts.push_back(item.cast<dpoint>());
++
++        return std::make_shared<full_object_detection_generic<dpoint>>(rect, parts);
++    }
++    catch (py::cast_error&)
++    {
++        // if it's not a py::list it better be a vector<point>.
++        auto&& parts = pyparts_.cast<const std::vector<dpoint>&>();
++        return std::make_shared<full_object_detection_generic<dpoint>>(rect, parts);
++    }
++}
++
++// ----------------------------------------------------------------------------------------
++
+ inline shape_predictor train_shape_predictor_on_images_py (
+         const py::list& pyimages,
+         const py::list& pydetections,
+@@ -182,6 +232,16 @@
+         .def(py::pickle(&getstate<type>, &setstate<type>));
+     }
+     {
++    typedef full_object_detection_generic<dpoint> type;
++    py::class_<type, std::shared_ptr<type>>(m, "full_object_detection_dp", "This object contains the bounding box of a thing in an image, and the coordinates of its landmarks.")
++        .def(py::init(&full_obj_det_dp_init), py::arg("rect"), py::arg("parts"), "rect: dlib rectangle, parts: dpoints") 
++        .def_property_readonly("rect", &full_obj_det_dp_get_rect, "Bounding box from the underlying detector.")
++        .def_property_readonly("num_parts", &full_obj_det_dp_num_parts, "The number of parts of the object.")
++        .def("part", &full_obj_det_dp_part, py::arg("idx"), "A single part of the object as a dlib dpoint.")
++        .def("parts", &full_obj_det_dp_parts, "A vector of dlib dpoints representing all of the parts.")
++        .def(py::pickle(&getstate<type>, &setstate<type>));
++    }
++    {
+     typedef shape_predictor_training_options type;
+     py::class_<type>(m, "shape_predictor_training_options",
+         "This object is a container for the options to the train_shape_predictor() routine.")
+@@ -264,7 +324,7 @@
+         .def(py::init(&load_object_from_file<type>),
+ "Loads a shape_predictor from a file that contains the output of the \n\
+ train_shape_predictor() routine.")
+-        .def("__call__", &run_predictor, py::arg("image"), py::arg("box"),
++        .def("__call__", &run_predictor<point>, py::arg("image"), py::arg("box"), py::arg("startpart") = (full_object_detection *) nullptr,
+ "requires \n\
+     - image is a numpy ndarray containing either an 8bit grayscale or RGB \n\
+       image. \n\
+@@ -272,6 +332,8 @@
+ ensures \n\
+     - This function runs the shape predictor on the input image and returns \n\
+       a single full_object_detection.")
++        .def("calldpoint", &run_predictor<dpoint>, py::arg("image"), py::arg("box"), py::arg("startpart") = (full_object_detection_generic<dpoint> *) nullptr,
++        "like call, but for a dpoint")
+         .def("save", save_shape_predictor, py::arg("predictor_output_filename"), "Save a shape_predictor to the provided path.")
+         .def(py::pickle(&getstate<type>, &setstate<type>));
+     }

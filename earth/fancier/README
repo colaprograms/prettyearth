@@ -1,0 +1,13 @@
+programs:
+
+stitch.py
+
+- downloads tiles from an internet place and stitches them together into satellite images
+
+cubist.py
+
+- generates the cubemaps from those images
+
+sphere.py
+
+- shows an arth
