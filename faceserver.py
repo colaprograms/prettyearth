@@ -9,7 +9,7 @@ import socket
 import os
 import traceback as tb
 import struct
-import sys
+import threading
 
 class average:
     def __init__(self):
@@ -117,11 +117,12 @@ class facedetector:
         else:
             shortftimer.start()
             t, b, l, r = decompose(self.currentbb)
-            SCALE_TOP = 0.1
-            SCALE = 0.05
+            SCALE_TOP = 0.2
+            SCALE = 0.1
             rect = usesmallbox(t, b, l, r, SCALE_TOP, SCALE)
-            if not rect:
-                rect = usewholeimg()
+            #if not rect:
+            #    pass
+                #rect = usewholeimg()
             self.currentbb = rect
             shortftimer.stop()
         if self.currentbb is not None:
@@ -353,6 +354,13 @@ class facetracker:
                 x = (x - 320) * z * SCALE
                 y = (y - 240) * z * SCALE
                 #print("%6.2f    %6.2f    %6.2f" % (x, y, z))
+                #print("facebb = %4f     shapes = %4f" % (facebb.
+                print("facebb = %4f    shapes = %4f    shortf = %f    others = %f" % (
+                    facebbtimer.get(),
+                    shapestimer.get(),
+                    shortftimer.get(),
+                    otherstimer.get()
+                ))
                 self.data = struct.pack('!IIdfff', VERSION, PACKET_VALID, t, x, y, z)
         if not foundeyes:
             self.predict.stop()
