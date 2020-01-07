@@ -10,7 +10,7 @@ loadPrcFileData('', """
     framebuffer-multisample 1
     multisamples 2
     fullscreen 1
-    win-size 1024 576
+    win-size 1920 1080
 """)
 
 from pandac.PandaModules import *
@@ -300,7 +300,7 @@ class Planet(ShowBase):
 
         if self.facepos.cur is not None:
             t, x, y, z = self.facepos.cur
-            y -= 0.15
+            y += 0.16
             z += 0.06
             x *= -12
             y *= -12

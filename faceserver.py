@@ -146,6 +146,8 @@ class facedetector:
             #t = time.time()
             #print("difference:", time.time() - t)
             if t != self.last:
+                if self.last is not None:
+                    print("difference:", t - self.last)
                 waiting = False
             self.last = t
         depth_frame = frames.get_depth_frame()
@@ -294,7 +296,8 @@ class imagewindow:
                 return dlib.point(dp.x, dp.y)
             if True:
                 fobp = dlib.full_object_detection(shape.rect, [topoint(shape.part(i)) for i in range(shape.num_parts)])
-                for jj in range(fobp.num_parts):
+                #for jj in range(fobp.num_parts):
+                if False:
                     p = fobp.part(jj)
                     if jj > self.framecount % 68:
                         break
@@ -388,6 +391,10 @@ class socketmanage:
                 self.ft.process()
                 try:
                     conn.send(self.ft.data)
+                except ConnectionAbortedError:
+                    break #windows
+                except ConnectionResetError:
+                    break #windows
                 except BrokenPipeError:
                     break
         finally:
