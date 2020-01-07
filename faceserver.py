@@ -9,6 +9,7 @@ import socket
 import os
 import traceback as tb
 import struct
+import sys
 
 class average:
     def __init__(self):
@@ -291,7 +292,7 @@ class imagewindow:
         if shape is not None:
             def topoint(dp):
                 return dlib.point(dp.x, dp.y)
-            if False:
+            if True:
                 fobp = dlib.full_object_detection(shape.rect, [topoint(shape.part(i)) for i in range(shape.num_parts)])
                 for jj in range(fobp.num_parts):
                     p = fobp.part(jj)
@@ -318,6 +319,10 @@ class facetracker:
     def __init__(self):
         self.fd = facedetector()
         self.predict = predicteyes()
+        self.iw = None # imagewindow
+
+    def setup_image_window(self):
+        self.iw = imagewindow()
 
     def start(self):
         self.fd.start()
@@ -328,6 +333,8 @@ class facetracker:
         out = self.fd.get()
         if out is None:
             return
+        if self.iw:
+            self.iw.show(out)
         t, depthimage, colorimage, shape = out
         foundeyes = False
         if shape is not None:
