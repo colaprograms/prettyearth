@@ -4,16 +4,18 @@ import time, numpy, json, pickle
 
 def _img(u):
     r = urlopen(u)
+    le = r.length
     assert r.headers.get_content_type() in ["image/jpeg", "image/png"]
     img = Image.open(r)
     #print("got", img)
-    return img
+    return img, le
     
 class stitch:
     def __init__(self, zoomlevel):
         self.zoomlevel = zoomlevel
         self.ntiles = 1 << zoomlevel
         self.tilesize = None
+        self.totalsize = 0
     
     def makeimage_once_tilesize_known(self, tile):
         size = tile.size
@@ -47,7 +49,8 @@ class stitch:
     def paste(self, i, j, url):
         u = url % (self.zoomlevel, i, j)
         #print("loading %s" % u)
-        tile = _img(u)
+        tile, length = _img(u)
+        self.totalsize += length
         self.pastetile(i, j, tile)
     
     #def get(self, url, bbox=None):
@@ -136,8 +139,8 @@ class disk:
         z.save(filename) # atashi iya ne
         
         open(filename + ".last-updated", "w").write("%s" % last)
-        
         print("")
+        print("Downloaded %d KB" % (z.totalsize // 1024))
     
     @staticmethod
     def east():

@@ -75,7 +75,7 @@ class darkearth (sphereimage):
         self.sun = ephem.Sun()
         self.observer = ephem.Observer()
         self.observer.lon = "90"
-        self.observer.date = datetime.datetime.fromtimestamp(time)
+        self.observer.date = datetime.datetime.utcfromtimestamp(time)
         self.sun.compute(self.observer)
         az, alt = self.sun.az, self.sun.alt
         azs, azc = np.sin(az), np.cos(az)
@@ -89,8 +89,11 @@ class darkearth (sphereimage):
         out = x * self.vec[0] + y * self.vec[1] + z * self.vec[2]
         #print(np.min(out), np.max(out))
         buf = np.zeros(out.shape + (4,), dtype=np.uint8)
-        tra = 191 * (1 - out) ** 9
-        tra = np.clip(tra, 0, 191)
+        #buf[:, :, 0] = 255
+        tra = 255 * (1 - out) ** 4
+        tra = np.clip(tra, 0, 255)
+        #tra = 191 * (1 - out) ** 9
+        #tra = np.clip(tra, 0, 191)
         buf[..., 3] = tra.astype(np.uint8)
         return buf
     
@@ -210,6 +213,7 @@ def makedynamic():
         disk_on_sphere(disc[2], -140.7 - 90),
         disk_on_sphere(disc[3], -41.5 - 90)
         , "dark_to_transparent"#disk_on_sphere(disc[0], 0)
+        #, darkearth(time.time())
         #disk_on_sphere(disc[0], np.pi / 2),
         #disk_on_sphere(disc[1], +1)
     ]

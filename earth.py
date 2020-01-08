@@ -9,8 +9,8 @@ loadPrcFileData('', """
     show-frame-rate-meter 1
     framebuffer-multisample 1
     multisamples 2
-    fullscreen 1
-    win-size 1920 1080
+    #fullscreen 1
+    #win-size 1920 1080
 """)
 
 from pandac.PandaModules import *
@@ -152,7 +152,7 @@ class planet:
         material = Material()
         #material.setShininess(0.1)
         material.setShininess(1)
-        material.setSpecular((0.2, 0.2, 0.2, 1))
+        material.setSpecular((0, 0, 0, 1))
         
         self.ov = TextureStage('overlay')
         self.ov.setMode(TextureStage.MDecal)
@@ -283,7 +283,7 @@ class Planet(ShowBase):
             
     def rotator(self, task):
         planet = render.find("planet")
-        planet.setHpr(task.time, 0, 0)
+        planet.setHpr(task.time*11, 0, 0)
         return Task.cont
 
     def cameracontrol(self, task):
