@@ -151,7 +151,7 @@ class results:
         xo, yo, w, h, *others = self.keypts[j]
         return f(xo, yo), w, h, [f(others[o], others[o+1]) for o in range(0, len(others), 2)]
 
-    def large(self, threshold=2):
+    def large(self, threshold=3):
         return np.nonzero(self.scores > threshold)[0]
 
     def eyes(self):
@@ -177,6 +177,7 @@ class facecam:
     def get(self):
         t, depth_image, color_image = self.camera.get()
         t0 = time()
+        depth_image = depth_image[:, ::-1]
         scaled = cv2.resize(color_image, dsize=(128, 96), interpolation=cv2.INTER_LANCZOS4)
         scaled = scaled[:, ::-1, :]
         scaled = np.pad(scaled, ((16, 16), (0, 0), (0, 0)), mode='constant')
@@ -189,6 +190,9 @@ class facecam:
             results(shape)
         )
 
+    def stop(self):
+        self.camera.stop()
+
 if __name__ == "__main__":
     fc = facecam()
     fc.start()
@@ -196,7 +200,9 @@ if __name__ == "__main__":
     while True:
         (t, depth, color, shape) = fc.get()
         eyes = shape.eyes()
-        if eyes is not None:
+        if eyes is None:
+            print("EYES?")
+        else:
             for (x, y) in eyes:
                 color = cv2.circle(color, (int(x), int(y)  ), 6, (0, 0, 255))
         cv2.imshow("camera picture", color)

@@ -239,6 +239,7 @@ class Planet(ShowBase):
         
         if True:
             p = planet(base.render)
+            p.nodePath.setPos(0, 0, 0)
         else:
             cuby = cube(base.render)
             material = Material()
@@ -283,7 +284,7 @@ class Planet(ShowBase):
             
     def rotator(self, task):
         planet = render.find("planet")
-        planet.setHpr(task.time*11, 0, 0)
+        planet.setHpr(task.time*0, 0, 0)
         return Task.cont
 
     def cameracontrol(self, task):
@@ -300,14 +301,15 @@ class Planet(ShowBase):
 
         if self.facepos.cur is not None:
             t, x, y, z = self.facepos.cur
-            y += 0.16
+            y -= 0.14
             z += 0.06
-            x *= -12
+            x *= 12
             y *= -12
             z *= 16#`22
             #x *= -12
             #y *= -12
             #z *= 16 #12
+            print(x, y, z)
             self.last = t, x, y, z
         else:
             if self.last:
