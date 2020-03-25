@@ -284,7 +284,7 @@ class Planet(ShowBase):
             
     def rotator(self, task):
         planet = render.find("planet")
-        planet.setHpr(task.time*0, 0, 0)
+        planet.setHpr(task.time*11, 0, 0)
         return Task.cont
 
     def cameracontrol(self, task):
