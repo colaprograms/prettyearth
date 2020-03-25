@@ -1,9 +1,13 @@
-from stitch import disk
-import cubist
+from .stitch import disk
+from .cubist import *
 
-sats = "east west himawari meteosat8"
-for name in sats.split(" "):
-    getattr(disk, name)()
+def regenerate():
+    disk.east()
+    disk.west()
+    disk.himawari()
+    disk.meteosat8()
+    makeregular()
+    makedynamic()
 
-cubist.makeregular()
-cubist.makedynamic()
+if __name__ == "__main__":
+    regenerate()

@@ -1,5 +1,5 @@
 from PIL import Image
-from projec import convert
+from .projec import convert
 import math
 import numpy as np
 import time

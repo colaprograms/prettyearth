@@ -289,7 +289,7 @@ class Planet(ShowBase):
     def cameracontrol(self, task):
         if self.pausecontrol:
             return
-        return self.face()
+        return self.mousecontrol() #face()
 
     def face(self):
         props = base.win.getProperties()
@@ -345,9 +345,10 @@ class Planet(ShowBase):
                 return 0, 0, r
 
         planet = render.find("planet")
+        planet.setScale(0.70)
         x, y, r = mouse()
         # atashi iya ne
-        offset = LVector3(x, -6, y)
+        offset = LVector3(x, -2, y)
         ul, ur, ll, lr = (
             LPoint3(-r, 0, 1) - offset,
             LPoint3(r, 0, 1) - offset,
