@@ -6,7 +6,9 @@ def regenerate():
     disk.west()
     disk.himawari()
     disk.meteosat8()
+    print("building the static cubemap")
     makeregular()
+    print("building the dynamic cubemap")
     makedynamic()
 
 if __name__ == "__main__":
