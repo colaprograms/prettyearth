@@ -27,8 +27,3 @@ Example screenshot:
 the landmarks file is copied from http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
 
 the tflite model is copied from https://github.com/google/mediapipe/blob/master/mediapipe/models/face_detection_front.tflite
-
-history of the optimization
-
-cropping the image to where the face was last time: ok, improved to 42 fps
-reusing the features from last frame in shape_predictor: did not work
