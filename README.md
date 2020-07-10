@@ -7,6 +7,10 @@ An experimental program to draw a 3d earth with head tracking and a cloud layer.
 
 Typical usage:
 ```
+# First, to get up-to-date cloud layer images
+python regenerate_cubemap.py
+
+
 # Just draw the earth without head tracking. Instead, the mouse cursor is interpreted as the head position
 python earth.py
 
